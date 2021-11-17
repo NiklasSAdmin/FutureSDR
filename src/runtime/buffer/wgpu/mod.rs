@@ -38,6 +38,7 @@ impl WgpuBroker {
     pub async fn new() -> WgpuBroker {
         info!("adapter");
         let instance = wgpu::Instance::new(wgpu::Backends::all());
+        info!("created instance");
 
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
