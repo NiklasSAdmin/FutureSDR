@@ -61,6 +61,30 @@ impl WgpuBroker {
             .await
             .expect("device queue failed");
 
+        /* Map_Async Test:
+
+        let tmp_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            size: 8192,
+            usage:  wgpu::BufferUsages::COPY_DST
+                | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+
+
+        let slice = tmp_buffer.slice(..);
+        let future = slice.map_async(wgpu::MapMode::Read);
+        log::info!("*** tmp buffer test ***");
+        device.poll(wgpu::Maintain::Poll);
+        if let Ok(()) = future.await {
+            log::info!("***SUCCESS: Buffer inputs WORK: ***");
+            info!(" {:?}", tmp_buffer.slice(..));
+
+        } else {
+            panic!("failed to run compute on gpu!")
+        }
+        */
+
         WgpuBroker {
             adapter,
             device,

@@ -1,9 +1,8 @@
 use std::iter::repeat_with;
 use wasm_bindgen::prelude::*;
 
-//use wasm_rs_async_executor::single_threaded::block_on;
 
-use futuresdr::blocks::{WgpuBuilderWasm};
+use futuresdr::blocks::WgpuBuilderWasm;
 use futuresdr::blocks::VectorSink;
 use futuresdr::blocks::VectorSinkBuilder;
 use futuresdr::blocks::VectorSourceBuilder;
@@ -13,14 +12,9 @@ use futuresdr::runtime::Runtime;
 use futuresdr::runtime::buffer::wgpu;
 use futuresdr::runtime::buffer::wgpu::WgpuBroker;
 
+
 #[wasm_bindgen]
-pub async fn run_fg() {
-    run().await;
-
-
-}
-
-async fn run(){
+pub async fn run(){
 
     //std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     //futuresdr::runtime::init();
@@ -33,7 +27,9 @@ async fn run(){
     let orig: Vec<f32> = repeat_with(rand::random::<f32>).take(n_items).collect();
 
     log::info!("*** start building wgpu Broker ***");
-
+    for i in 0..10 {
+        log::info!("{:?}", orig[i]);
+    }
 
 
     let wgpu_broker = WgpuBroker::new().await;
@@ -53,6 +49,7 @@ async fn run(){
     log::info!("*** connect streams ***");
     fg.connect_stream_with_type(src, "out", wgpu, "in", wgpu::H2D::new()).unwrap();
     fg.connect_stream_with_type(wgpu, "out", snk, "in", wgpu::D2H::new()).unwrap();
+
     log::info!("*** start runtime  ***");
     fg = Runtime::new().run(fg).unwrap();
     log::info!("*** start sink  ***");
@@ -63,5 +60,6 @@ async fn run(){
     for i in 0..v.len() {
         assert!((orig[i] * 12.0 - v[i]).abs() <  f32::EPSILON);
     }
+
 
 }

@@ -68,6 +68,7 @@ impl AsyncKernel for WgpuWasm {
                             label: None,
                             size: self.capacity,
                             usage:  wgpu::BufferUsages::COPY_DST
+                                | wgpu::BufferUsages::COPY_SRC
                                 | wgpu::BufferUsages::MAP_READ
                                 | wgpu::BufferUsages::STORAGE,
                             mapped_at_creation: true,
@@ -110,6 +111,31 @@ impl AsyncKernel for WgpuWasm {
 
         for m in i(sio, 0).buffers().drain(..) {
 
+
+            let tmp_buffer = self.broker.device.create_buffer(&wgpu::BufferDescriptor {
+                label: None,
+                size: 8192,
+                usage:  wgpu::BufferUsages::COPY_DST
+                    | wgpu::BufferUsages::MAP_READ,
+                mapped_at_creation: false,
+            });
+
+
+            let slice = tmp_buffer.slice(..);
+            let future = slice.map_async(wgpu::MapMode::Read);
+            log::info!("*** tmp buffer test ***");
+            self.broker.device.poll(wgpu::Maintain::Poll);
+            if let Ok(()) = future.await {
+                log::info!("***SUCCESS: Buffer inputs WORK: ***");
+                info!(" {:?}", tmp_buffer.slice(..));
+
+            } else {
+                panic!("failed to run compute on gpu!")
+            }
+
+
+
+
             // Instantiates the bind group, once again specifying the binding of buffers.
            let bind_group_layout = self.pipeline.as_ref().unwrap().get_bind_group_layout(0);
             let bind_group = self.broker.device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -138,6 +164,7 @@ impl AsyncKernel for WgpuWasm {
                     cpass.dispatch(dispatch, 1, 1); // Number of cells to run, the (x,y,z) size of item being processed
                 }
 
+
             m.buffer.unmap();
 
             // Submits command encoder for processing
@@ -147,6 +174,9 @@ impl AsyncKernel for WgpuWasm {
             let buffer_slice = m.buffer.slice(..);
            let buffer_future = buffer_slice.map_async(wgpu::MapMode::Read);
             log::info!("*** after map async ***");
+
+
+
 
             // Poll the device in a blocking manner so that our future resolves.
             // In an actual application, `device.poll(...)` should

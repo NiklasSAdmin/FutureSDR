@@ -55,6 +55,7 @@ impl Scheduler for WasmScheduler {
         single_threaded::spawn(future)
     }
 
+
     fn spawn_blocking<T: Send + 'static>(
         &self,
         future: impl Future<Output = T> + Send + 'static,

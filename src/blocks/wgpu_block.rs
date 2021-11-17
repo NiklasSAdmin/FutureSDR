@@ -110,6 +110,8 @@ impl AsyncKernel for Wgpu {
         for m in i(sio, 0).buffers().drain(..) {
             debug!("webgpu block: launching full buffer");
 
+         //   log::info!("***Buffer inputs WORK: ***");
+         //   info!(" {:?}", m.buffer.slice(..));
 
             let bind_group_layout = self.pipeline.as_ref().unwrap().get_bind_group_layout(0);
             let bind_group = self.broker.device.create_bind_group(&wgpu::BindGroupDescriptor {
