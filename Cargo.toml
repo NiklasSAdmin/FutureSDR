@@ -12,9 +12,6 @@ keywords = ["sdr", "radio", "runtime", "async", "acceleration"]
 categories = ["asynchronous", "concurrency", "hardware-support", "science", "wasm"]
 resolver="2"
 
-[patch.crates-io]
-wgpu = {path = "/home/basti/scratch/wgpu/wgpu" }
-
 
 [workspace]
 members = [

@@ -16,8 +16,7 @@ console_error_panic_hook = "0.1.6"
 wasm-bindgen-futures = "0.4.23"
 console_log = "0.1.2"
 winit = {version = "0.25", features = ["web-sys"]}
-#wgpu = {version = "0.11.0"}
-wgpu = {path = "/home/basti/scratch/wgpu/wgpu" }
+wgpu = {version = "0.11.0"}
 log = "0.4"
 web-sys = { version = "0.3.53", features = ["Location"] }
 

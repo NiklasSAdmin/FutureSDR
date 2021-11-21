@@ -128,10 +128,10 @@ impl BufferWriterHost for WriterH2D {
         unsafe {
             let buffer = self.buffer.as_mut().unwrap();
             let capacity = 8192 as usize / self.item_size;
-            let slice = buffer.buffer.buffer.slice(..);
+           // let slice = buffer.buffer.buffer.slice(..);
 
             info!("H2D writer called bytes, buff is some   offset {}    capacity {}", buffer.offset, capacity);
-            let ret = slice.get_mapped_range_mut().as_mut_ptr();
+            let ret = buffer.buffer.buffer.as_mut_ptr();
             (
                 ret.add(buffer.offset * self.item_size),
                 //ret.as_mut_ptr().add(buffer.offset * self.item_size),

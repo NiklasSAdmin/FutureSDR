@@ -178,8 +178,7 @@ impl BufferReaderHost for ReaderD2H {
         unsafe {
             let buffer = self.buffer.as_ref().unwrap();
             let capacity = buffer.buffer.used_bytes / self.item_size;
-            let slice = buffer.buffer.buffer.slice(..);
-            let ret = slice.get_mapped_range().as_ptr();
+            let ret = buffer.buffer.buffer.as_ptr();
 
             (
                 ret.add(buffer.offset * self.item_size),

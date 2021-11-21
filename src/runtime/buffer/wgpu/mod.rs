@@ -16,13 +16,13 @@ pub use h2d::H2D;
 // ================== WGPU MESSAGE ============================
 #[derive(Debug)]
 pub struct BufferFull {
-    pub buffer: Buffer,
+    pub buffer: Vec<u8>,
     pub used_bytes: usize,
 }
 
 #[derive(Debug)]
 pub struct BufferEmpty {
-    pub buffer: Buffer,
+    pub buffer: Vec<u8>,
 }
 
 
