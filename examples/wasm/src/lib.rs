@@ -20,7 +20,7 @@ pub async fn run_fg() {
     let mut fg = Flowgraph::new();
 
     //let n_items = 20_000;
-    let n_items = 2048 * 2048;
+    let n_items = 2048 * 16;
     let orig: Vec<f32> = repeat_with(rand::random::<f32>).take(n_items).collect();
 
     log::info!("*** start building wgpu Broker ***");
@@ -40,9 +40,9 @@ pub async fn run_fg() {
     let snk = fg.add_block(snk);
 
     log::info!("*** connect streams ***");
-    //fg.connect_stream_with_type(src, "out", wgpu, "in", wgpu::H2D::new());
-    fg.connect_stream(src, "out", wgpu, "in").unwrap();
-    fg.connect_stream_with_type(wgpu, "out", snk, "in", wgpu::D2H::new());
+    fg.connect_stream_with_type(src, "out", wgpu, "in", wgpu::H2D::new()).unwrap();
+    //fg.connect_stream(src, "out", wgpu, "in").unwrap();
+    fg.connect_stream_with_type(wgpu, "out", snk, "in", wgpu::D2H::new()).unwrap();
     log::info!("*** start runtime  ***");
     fg = Runtime::new().run(fg).await.unwrap();
 

@@ -142,7 +142,7 @@ impl BufferWriterHost for WriterH2D {
 
     fn produce(&mut self, amount: usize) {
         debug!("H2D writer called produce {}", amount);
-
+        info!("H2D writer called produce {}", amount);
         let buffer = self.buffer.as_mut().unwrap();
         let capacity = 8192 as usize / self.item_size;
 
@@ -151,6 +151,7 @@ impl BufferWriterHost for WriterH2D {
         buffer.offset += amount;
         if buffer.offset == capacity {
             let buffer = self.buffer.take().unwrap().buffer.buffer;
+            info!("H2D writer called currentbuffer data: {:?} ...", buffer[0]);
             self.outbound.lock().unwrap().push(BufferFull {
                 buffer,
                 used_bytes: capacity * self.item_size,
