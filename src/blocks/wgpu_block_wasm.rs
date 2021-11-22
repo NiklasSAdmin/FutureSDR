@@ -126,7 +126,7 @@ impl AsyncKernel for WgpuWasm {
     ) -> Result<()> {
 
         for m in o(sio, 0).buffers().drain(..) {
-            log::info!("*** OutputBuffers First Element: {:?} ***", m.buffer[0]);
+            //log::info!("*** OutputBuffers First Element: {:?} ***", m.buffer[0]);
 
             let buff = self.broker.device.create_buffer(&wgpu::BufferDescriptor {
                 label: None,
@@ -144,10 +144,7 @@ impl AsyncKernel for WgpuWasm {
              //let input = sio.input(0).slice::<u8>();
             // log::info!("*** InputBuffers: {:?} ***", m.buffer);
 
-             let n = std::cmp::min(m.buffer.len() / 8192, self.output_buffers.len());
-             log::info!("*** n: {:?} ***", n);
-             // let n = input.len() / 8192;
-             for i in 0..n {
+
                  let output = self.output_buffers.pop().unwrap();
 
                  // Instantiates the bind group, once again specifying the binding of buffers.
@@ -160,17 +157,17 @@ impl AsyncKernel for WgpuWasm {
                          resource: self.storage_buffer.as_entire_binding(),
                      }],
                  });
-                 log::info!("*** bind group created ***");
+                 //log::info!("*** bind group created ***");
 
-                 let mut dispatch = (8192) as u32 / 4 / 64; // 4: item size, 64: work group size
-                 // if input.used_bytes as u32 / 4 % 64 > 0 {
-                 //     dispatch += 1;
-                 // }
+                 let mut dispatch = m.used_bytes as u32 / 4 / 64; // 4: item size, 64: work group size
+                  if m.used_bytes as u32 / 4 % 64 > 0 {
+                      dispatch += 1;
+                  }
 
                  {
-                     log::info!("***Write to storage buffer - first element : {} ***", m.buffer[0]);
+                    // log::info!("***Write to storage buffer - first element : {} ***", m.buffer[0]);
                      // log::info!("***Write to storage buffer - 8192 element : {} ***", input[8192]);
-                     self.broker.queue.write_buffer(&self.storage_buffer, 0, &m.buffer[(i * 8192)..((i + 1) * 8192)]);
+                     self.broker.queue.write_buffer(&self.storage_buffer, 0, &m.buffer[0..m.used_bytes]);
                      let mut encoder =
                          self.broker.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
@@ -182,23 +179,23 @@ impl AsyncKernel for WgpuWasm {
                          cpass.dispatch(dispatch, 1, 1);
                      }
 
-                     encoder.copy_buffer_to_buffer(&self.storage_buffer, 0, &output, 0, 8192);
+                     encoder.copy_buffer_to_buffer(&self.storage_buffer, 0, &output, 0, m.used_bytes as u64);
 
-                     log::info!("*** queue submit ***");
+                   //  log::info!("*** queue submit ***");
                      output.unmap();
                      self.broker.queue.submit(Some(encoder.finish()));
                  }
 
-                 log::info!("*** remapping result buffer ***");
+                /// log::info!("*** remapping result buffer ***");
                  let buffer_slice = output.slice(..);
                  let buffer_future = buffer_slice.map_async(wgpu::MapMode::Read);
 
                  self.broker.device.poll(wgpu::Maintain::Wait);
 
                  if let Ok(()) = buffer_future.await {
-                     log::info!("*** Output Send ***");
+                     //log::info!("*** Output Send ***");
                      let range = buffer_slice.get_mapped_range().to_vec();
-                     let out = BufferFull { buffer: range, used_bytes: 8192 };
+                     let out = BufferFull { buffer: range, used_bytes: m.used_bytes };
                      //o(sio, 0).submit(BufferFull {buffer: output.buffer, used_bytes: 8192 });
                      o(sio, 0).submit(out);
 
@@ -206,7 +203,7 @@ impl AsyncKernel for WgpuWasm {
                  } else {
                      panic!("failed to map result buffer")
                  }
-             }
+
 
         //sio.input(0).consume(n * 2048);#
              // Horrible style to always ceate a new buffer..?

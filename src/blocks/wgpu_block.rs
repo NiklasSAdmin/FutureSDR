@@ -63,7 +63,7 @@ impl AsyncKernel for Wgpu {
 
         let staging_buffer;
 
-        staging_buffer = self.broker.device.create_buffer(&wgpu::BufferDescriptor {
+         = self.broker.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: self.capacity,
             usage: wgpu::BufferUsages::STORAGE
