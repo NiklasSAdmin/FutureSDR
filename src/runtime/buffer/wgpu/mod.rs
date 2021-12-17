@@ -9,19 +9,58 @@ pub use d2h::ReaderD2H;
 pub use d2h::WriterD2H;
 pub use d2h::D2H;
 mod h2d;
+
 pub use h2d::ReaderH2D;
 pub use h2d::WriterH2D;
 pub use h2d::H2D;
 
+
 // ================== WGPU MESSAGE ============================
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug)]
+pub struct BufferFull {
+    pub buffer: Buffer,
+    pub used_bytes: usize,
+}
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug)]
+pub struct BufferEmpty {
+    pub buffer: Buffer,
+    pub size: u64,
+}
+
+#[cfg(target_arch = "wasm32")]
 #[derive(Debug)]
 pub struct BufferFull {
     pub buffer: Vec<u8>,
     pub used_bytes: usize,
 }
-
+#[cfg(target_arch = "wasm32")]
 #[derive(Debug)]
 pub struct BufferEmpty {
+    pub buffer: Vec<u8>,
+    pub size: u64,
+}
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug)]
+pub struct GPUBufferFull {
+    pub buffer: Buffer,
+    pub used_bytes: usize,
+}
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug)]
+pub struct GPUBufferEmpty {
+    pub buffer: Buffer,
+}
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug)]
+pub struct GPUBufferFull {
+    pub buffer: Vec<u8>,
+    pub used_bytes: usize,
+}
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug)]
+pub struct GPUBufferEmpty {
     pub buffer: Vec<u8>,
 }
 

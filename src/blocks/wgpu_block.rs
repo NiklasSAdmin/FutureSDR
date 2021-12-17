@@ -14,7 +14,7 @@ use crate::runtime::MessageIoBuilder;
 use crate::runtime::StreamIo;
 use crate::runtime::StreamIoBuilder;
 use crate::runtime::WorkIo;
-use crate::runtime::buffer::wgpu::{ReaderH2D, WriterD2H, BufferEmpty};
+use crate::runtime::buffer::wgpu::{ReaderH2D, WriterD2H, BufferEmpty, BufferFull, GPUBufferFull, GPUBufferEmpty};
 
 
 pub struct Wgpu {
@@ -63,9 +63,9 @@ impl AsyncKernel for Wgpu {
 
         let staging_buffer;
 
-         = self.broker.device.create_buffer(&wgpu::BufferDescriptor {
+        staging_buffer = self.broker.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
-            size: self.capacity,
+            size: self.capacity * 4 ,
             usage: wgpu::BufferUsages::STORAGE
                 | wgpu::BufferUsages::COPY_DST
                 | wgpu::BufferUsages::COPY_SRC
@@ -73,7 +73,7 @@ impl AsyncKernel for Wgpu {
             mapped_at_creation: true,
         });
 
-        input.submit(BufferEmpty { buffer: staging_buffer });
+        input.submit(BufferEmpty { buffer: staging_buffer, size: self.capacity*4 });
 
 
         let cs_module = self.broker.device.create_shader_module(&wgpu::ShaderModuleDescriptor {
@@ -104,7 +104,7 @@ impl AsyncKernel for Wgpu {
     ) -> Result<()> {
         for m in o(sio, 0).buffers().drain(..) {
             debug!("webgpu: forwarding buff from output to input");
-            i(sio, 0).submit(m);
+            i(sio, 0).submit(BufferEmpty{buffer: m.buffer, size: self.capacity *4 });
         }
 
         for m in i(sio, 0).buffers().drain(..) {
@@ -149,7 +149,7 @@ impl AsyncKernel for Wgpu {
             self.broker.device.poll(wgpu::Maintain::Wait);
 
             if let Ok(()) = buffer_future.await {
-                o(sio, 0).submit(m);
+                o(sio, 0).submit(GPUBufferFull{ buffer: m.buffer, used_bytes: m.used_bytes });
             } else {
                 panic!("failed to run compute on gpu!")
             }
@@ -169,10 +169,10 @@ pub struct WgpuBuilder {
 }
 
 impl WgpuBuilder {
-    pub fn new(broker: WgpuBroker) -> WgpuBuilder {
+    pub fn new(broker: WgpuBroker, buffer_items: u64) -> WgpuBuilder {
         WgpuBuilder {
             wgpu_broker: broker,
-            capacity: 8192,
+            capacity: buffer_items,
         }
     }
 
