@@ -182,17 +182,18 @@ impl BufferReaderHost for ReaderD2H {
         unsafe {
             let buffer = self.buffer.as_ref().unwrap();
             let capacity = buffer.buffer.used_bytes / self.item_size;
-            let ret = buffer.buffer.buffer.as_ptr(); // get_mapped_range().as_ptr();
+          //  let ret = buffer.buffer.buffer.as_ptr(); // get_mapped_range().as_ptr();
             //let ret = var.as_mut_ptr();
-         //   let ret = buffer.buffer.buffer.slice(..).get_mapped_range().to_vec().as_ptr(); // get_mapped_range().as_ptr();
+            let ptr = buffer.buffer.buffer.slice(..).get_mapped_range().as_ptr(); // get_mapped_range().as_ptr();
+           // let ptr = range.as_ptr();
             //drop(var);
            // buffer.buffer.buffer.unmap();
-            //log::info!("Return Pointer:  {:?} ", ret);
+           // log::info!("Return Pointer:  {:?} ", ret);
             //log::info!("Ret Add - Start Address:  {:?}, ***,  Size: {:?} ", ret.add(buffer.offset * self.item_size),
              //   (capacity - buffer.offset) * self.item_size);
 
             (
-                ret.add(buffer.offset * self.item_size),
+                ptr.add(buffer.offset * self.item_size),
                 (capacity - buffer.offset) * self.item_size,
             )
         }
@@ -231,14 +232,15 @@ impl BufferReaderHost for ReaderD2H {
        // log::info!("D2H reader consume {} elements", amount);
 
         let buffer = self.buffer.as_mut().unwrap();
-        let capacity = buffer.buffer.used_bytes / self.item_size;
-
+        let capacity =   buffer.buffer.used_bytes / self.item_size;
+       // log::info!("Consume -- capacity: {}, offset: {}", capacity, buffer.offset);
         debug_assert!(amount + buffer.offset <= capacity);
         debug_assert!(amount != 0);
 
         buffer.offset += amount;
         if buffer.offset == capacity {
             let buffer = self.buffer.take().unwrap().buffer.buffer;
+            buffer.unmap();
             self.outbound.lock().unwrap().push(GPUBufferEmpty { buffer});
 
             if let Some(b) = self.inbound.lock().unwrap().pop() {

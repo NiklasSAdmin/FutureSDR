@@ -17,7 +17,7 @@ pub struct VectorSink<T: Clone + std::fmt::Debug + Sync + 'static> {
 }
 
 impl<T: Clone + std::fmt::Debug + Send + Sync + 'static> VectorSink<T> {
-    pub fn new(capacity: usize) -> Block {
+    pub fn new(_capacity: usize) -> Block {
         Block::new_async(
             BlockMetaBuilder::new("VectorSink").build(),
             StreamIoBuilder::new()
@@ -25,7 +25,8 @@ impl<T: Clone + std::fmt::Debug + Send + Sync + 'static> VectorSink<T> {
                 .build(),
             MessageIoBuilder::<Self>::new().build(),
             VectorSink {
-                items: Vec::<T>::with_capacity(capacity),
+                //items: Vec::<T>::with_capacity(capacity),
+                items: Vec::<T>::new(),
             },
         )
     }
@@ -50,7 +51,10 @@ impl<T: Clone + std::fmt::Debug + Send + Sync + 'static> AsyncKernel for VectorS
                 break;
             }
 
-            self.items.extend_from_slice(i);
+            // self.items.extend_from_slice(i);
+            self.items.extend(i.to_vec());
+            // log::info!("items.len: {} Items: {:?}", self.items.len(), self.items.get(self.items.len()- i.len()));
+            // log::info!("Consume i.len: {:?}", i.len());
 
             sio.input(0).consume(i.len());
         }

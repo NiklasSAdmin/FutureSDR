@@ -55,13 +55,13 @@ pub struct GPUBufferEmpty {
 #[cfg(target_arch = "wasm32")]
 #[derive(Debug)]
 pub struct GPUBufferFull {
-    pub buffer: Vec<u8>,
+    pub buffer: Buffer,
     pub used_bytes: usize,
 }
 #[cfg(target_arch = "wasm32")]
 #[derive(Debug)]
 pub struct GPUBufferEmpty {
-    pub buffer: Vec<u8>,
+    pub buffer: Buffer,
 }
 
 
