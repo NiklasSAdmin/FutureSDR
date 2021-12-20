@@ -165,16 +165,18 @@ impl BufferReaderHost for ReaderD2H {
     fn as_any(&mut self) -> &mut dyn Any {
         self
     }
-    #[cfg(target_arch = "wasm32")]
+   // #[cfg(target_arch = "wasm32")]
     fn bytes(&mut self) -> (*const u8, usize) {
         debug!("D2H reader bytes");
         if self.buffer.is_none() {
             if let Some(b) = self.inbound.lock().unwrap().pop() {
+                debug!("set gpuBuffer full from inbound");
                 self.buffer = Some(CurrentBuffer {
                     buffer: b,
                     offset: 0,
                 });
             } else {
+                debug!("set wrong pointer");
                 return (std::ptr::null::<u8>(), 0);
             }
         }
@@ -184,7 +186,9 @@ impl BufferReaderHost for ReaderD2H {
             let capacity = buffer.buffer.used_bytes / self.item_size;
           //  let ret = buffer.buffer.buffer.as_ptr(); // get_mapped_range().as_ptr();
             //let ret = var.as_mut_ptr();
-            let ptr = buffer.buffer.buffer.slice(..).get_mapped_range().as_ptr(); // get_mapped_range().as_ptr();
+            let range = buffer.buffer.buffer.slice(..).get_mapped_range();
+            let ptr = range.as_ptr(); // get_mapped_range().as_ptr();
+            //assert_eq!(range.len(), buffer.buffer.used_bytes);
            // let ptr = range.as_ptr();
             //drop(var);
            // buffer.buffer.buffer.unmap();
@@ -198,7 +202,7 @@ impl BufferReaderHost for ReaderD2H {
             )
         }
     }
-
+/*
     #[cfg(not(target_arch = "wasm32"))]
     fn bytes(&mut self) -> (*const u8, usize) {
         debug!("D2H reader bytes");
@@ -228,12 +232,14 @@ impl BufferReaderHost for ReaderD2H {
         }
     }
 
+ */
+
     fn consume(&mut self, amount: usize) {
        // log::info!("D2H reader consume {} elements", amount);
 
         let buffer = self.buffer.as_mut().unwrap();
         let capacity =   buffer.buffer.used_bytes / self.item_size;
-       // log::info!("Consume -- capacity: {}, offset: {}", capacity, buffer.offset);
+        log::info!("Consume -- capacity: {}, offset: {}", capacity, buffer.offset);
         debug_assert!(amount + buffer.offset <= capacity);
         debug_assert!(amount != 0);
 

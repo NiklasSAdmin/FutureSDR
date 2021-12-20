@@ -22,7 +22,7 @@ pub struct Wgpu {
     capacity: u64,
     pipeline: Option<ComputePipeline>,
 }
-
+#[cfg(target_arch = "wasm32")]
 impl Wgpu {
     pub fn new(broker: WgpuBroker, capacity: u64) -> Block {
         Block::new_async(
@@ -50,7 +50,7 @@ fn o(sio: &mut StreamIo, id: usize) -> &mut WriterD2H {
 fn i(sio: &mut StreamIo, id: usize) -> &mut ReaderH2D {
     sio.input(id).try_as::<ReaderH2D>().unwrap()
 }
-
+#[cfg(target_arch = "wasm32")]
 #[async_trait]
 impl AsyncKernel for Wgpu {
     async fn init(
@@ -94,7 +94,7 @@ impl AsyncKernel for Wgpu {
 
         Ok(())
     }
-
+    #[cfg(target_arch = "wasm32")]
     async fn work(
         &mut self,
         io: &mut WorkIo,
@@ -135,7 +135,7 @@ impl AsyncKernel for Wgpu {
                 cpass.insert_debug_marker("compute collatz iterations");
                 cpass.dispatch(dispatch, 1, 1); // Number of cells to run, the (x,y,z) size of item being processed
             }
-            m.buffer.unmap();
+           // m.buffer.unmap();
 
             self.broker.queue.submit(Some(encoder.finish()));
 
@@ -180,7 +180,7 @@ impl WgpuBuilder {
         self.capacity = c;
         self
     }
-
+    #[cfg(target_arch = "wasm32")]
     pub fn build(self) -> Block {
         Wgpu::new(self.wgpu_broker, self.capacity)
     }

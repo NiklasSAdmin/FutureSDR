@@ -111,7 +111,7 @@ impl BufferWriterHost for WriterH2D {
     fn as_any(&mut self) -> &mut dyn Any {
         self
     }
-    #[cfg(target_arch = "wasm32")]
+    //#[cfg(target_arch = "wasm32")]
     fn bytes(&mut self) -> (*mut u8, usize) {
         if self.buffer.is_none() {
             if let Some(b) = self.inbound.lock().unwrap().pop() {
@@ -139,7 +139,7 @@ impl BufferWriterHost for WriterH2D {
             )
         }
     }
-
+/*
     #[cfg(not(target_arch = "wasm32"))]
     fn bytes(&mut self) -> (*mut u8, usize) {
         if self.buffer.is_none() {
@@ -168,6 +168,8 @@ impl BufferWriterHost for WriterH2D {
             )
         }
     }
+
+ */
     fn produce(&mut self, amount: usize) {
         debug!("H2D writer called produce {}", amount);
        // log::info!("H2D writer called produce {}", amount);

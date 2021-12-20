@@ -5,7 +5,7 @@ use json;
 use json::JsonValue;
 
 
-use futuresdr::blocks::{WgpuBuilderWasm, Apply};
+use futuresdr::blocks::{WgpuBuilderWasm};
 use futuresdr::blocks::VectorSink;
 use futuresdr::blocks::VectorSinkBuilder;
 use futuresdr::blocks::VectorSourceBuilder;
@@ -32,12 +32,12 @@ pub async fn run_fg() {
 
     let mut buffer_values = Vec::new();
     let buffer_size = 2048;
-    for i in 0..8{
+    for i in 0..9{
         buffer_values.push(i32::pow(2, i) * buffer_size);
     }
-    //buffer_values.clear();
-    //buffer_values.push(8192);
-    let n_items = 10_000_000;
+    buffer_values.clear();
+    buffer_values.push(4096);
+    let n_items = 1_000_000;
 
     let orig: Vec<f32> = repeat_with(rand::random::<f32>).take(n_items).collect();
 
@@ -57,6 +57,7 @@ pub async fn run_fg() {
 
         let src = fg.add_block(src);
         let wgpu = fg.add_block(wgpu);
+        //  let apply = Apply::new(|i: &f32| -> f32 { *i * 12.0 });
         let snk = fg.add_block(snk);
 
         fg.connect_stream_with_type(src, "out", wgpu, "in", wgpu::H2D::new()).unwrap();
@@ -73,14 +74,26 @@ pub async fn run_fg() {
         assert_eq!(v.len(), n_items);
         let duration = start.elapsed();
         for i in 0..v.len() {
-           /* if(i >= 8192 && i <= 8192+2048 ) {
+/*
+            if i >= 8192 && i <= (8192+n) as usize {
+
                 continue;
             }
 
-            */
+ */
+
+
+
+
+            if i == 0 {
+                log::info!("wrong: i {}  orig {}  expected res {}   res {}", 0, orig[0], orig[0] * 12.0 , v[0]);
+            }
+
+
             if (orig[i] * 12.0 - v[i]).abs() > f32::EPSILON {
                 log::info!("***********+");
-                log::info!("output wrong: i {}  orig {}  orig.sqrt {}   res {}", i, orig[i], orig[i] * 12.0 , v[i]);
+                log::info!("output wrong: i {}  orig {}  expected res {}   res {}", i, orig[i], orig[i] * 12.0 , v[i]);
+                log::info!("output wrong: i {}  orig {}  expected res {}   res {}", i+1, orig[i+1], orig[i+1] * 12.0 , v[i+1]);
                 // log::info!("output wrong: i {}  orig {}   res {}", i+1, orig[i+1] * 12.0, v[i+1]);
                 panic!("wrong data");
             }
@@ -94,49 +107,8 @@ pub async fn run_fg() {
     }
 
     log::info!("JSON: \n {:#}", times);
-    let d = format!("JSON : {:#}", times);
-    web_sys::console::log_1(&d.into());
-
-    /*
-    let mut fg = Flowgraph::new();
-
-    let n_items = 10_000_000;
 
 
-    let orig: Vec<f32> = repeat_with(rand::random::<f32>).take(n_items).collect();
 
 
-    let start = instant::Instant::now();
-
-
-    let src = VectorSourceBuilder::<f32>::new(orig.clone()).build();
-    let apply = Apply::new(|i: &f32| -> f32 { *i * 12.0 });
-    let snk = VectorSinkBuilder::<f32>::new().build();
-
-    let src = fg.add_block(src);
-    let apply = fg.add_block(apply);
-    let snk = fg.add_block(snk);
-
-    fg.connect_stream(src, "out", apply, "in");
-    fg.connect_stream(apply, "out", snk, "in");
-
-    fg = Runtime::new().run(fg).await.unwrap();
-
-    let snk = fg.block_async::<VectorSink<f32>>(snk).unwrap();
-    let v = snk.items();
-
-    let duration = start.elapsed();
-
-    assert_eq!(v.len(), n_items);
-    for i in 0..v.len() {
-        // log::info!("i: {} --- orig*12: {} --- v[i]: {}", i, orig[i]*12.0, v[i] );
-        assert!((orig[i]*12.0 - v[i]).abs() < f32::EPSILON*2.0);
-    }
-    //log::info!("Time : {}", duration.as_millis());
-    let d = format!("Time : {}", duration.as_millis());
-
-
-    web_sys::console::log_1(&d.into());
-
-     */
 }
