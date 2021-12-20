@@ -16,14 +16,16 @@ use futuresdr::runtime::buffer::wgpu::WgpuBroker;
 
 extern crate web_sys;
 
+
+
 #[wasm_bindgen]
 pub async fn run_fg() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
     console_log::init().expect("could not initialize logger");
 
     let mut performance_values = Vec::new();
-    for i in 1..10{
-        performance_values.push(i * 1_000_000);
+    for i in 2..7{
+        performance_values.push(i32::pow(10, i));
     }
     //log::info!("{:?}",performance_values);
     //let performance_values = vec!(100, 10_000, 100_000, 1_000_000, 5_000_000, 10_000_000);
@@ -35,16 +37,18 @@ pub async fn run_fg() {
     for i in 0..9{
         buffer_values.push(i32::pow(2, i) * buffer_size);
     }
-    buffer_values.clear();
-    buffer_values.push(4096);
-    let n_items = 1_000_000;
 
-    let orig: Vec<f32> = repeat_with(rand::random::<f32>).take(n_items).collect();
+ //  performance_values.clear();
+ //   performance_values.push(1);
 
-    for n in buffer_values {
+
+    for n in performance_values {
         log::info!("starting");
         let mut fg = Flowgraph::new();
 
+        let n_items = n as usize;
+
+        let orig: Vec<f32> = repeat_with(rand::random::<f32>).take(n_items).collect();
 
 
         let start = instant::Instant::now();
@@ -52,7 +56,7 @@ pub async fn run_fg() {
         let wgpu_broker = WgpuBroker::new().await;
 
         let src = VectorSourceBuilder::<f32>::new(orig.clone()).build();
-        let wgpu = WgpuBuilderWasm::new(wgpu_broker, n as u64).build();
+        let wgpu = WgpuBuilderWasm::new(wgpu_broker, buffer_size as u64).build();
         let snk = VectorSinkBuilder::<f32>::new().build();
 
         let src = fg.add_block(src);
@@ -65,8 +69,8 @@ pub async fn run_fg() {
         fg.connect_stream_with_type(wgpu, "out", snk, "in", wgpu::D2H::new()).unwrap();
 
         log::info!("*** start runtime  ***");
-        fg = Runtime::new().run(fg).await.unwrap();
 
+        fg = Runtime::new().run(fg).await.unwrap();
         log::info!("*** flowgraph finished ***");
         let snk = fg.block_async::<VectorSink<f32>>(snk).unwrap();
         let v = snk.items();
@@ -74,27 +78,12 @@ pub async fn run_fg() {
         assert_eq!(v.len(), n_items);
         let duration = start.elapsed();
         for i in 0..v.len() {
-/*
-            if i >= 8192 && i <= (8192+n) as usize {
-
-                continue;
-            }
-
- */
-
-
-
-
-            if i == 0 {
-                log::info!("wrong: i {}  orig {}  expected res {}   res {}", 0, orig[0], orig[0] * 12.0 , v[0]);
-            }
-
 
             if (orig[i] * 12.0 - v[i]).abs() > f32::EPSILON {
                 log::info!("***********+");
+                log::info!("first: i {}  orig {}  expected res {}   res {}", 0, orig[0], orig[0] * 12.0 , v[0]);
                 log::info!("output wrong: i {}  orig {}  expected res {}   res {}", i, orig[i], orig[i] * 12.0 , v[i]);
                 log::info!("output wrong: i {}  orig {}  expected res {}   res {}", i+1, orig[i+1], orig[i+1] * 12.0 , v[i+1]);
-                // log::info!("output wrong: i {}  orig {}   res {}", i+1, orig[i+1] * 12.0, v[i+1]);
                 panic!("wrong data");
             }
         }
@@ -107,6 +96,7 @@ pub async fn run_fg() {
     }
 
     log::info!("JSON: \n {:#}", times);
+
 
 
 

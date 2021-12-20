@@ -19,6 +19,7 @@ fn main() -> Result<()> {
 
     let mut buffer_values = Vec::new();
     buffer_values.push(2048);
+    let buffer_size = 2048;
     /*
 
     for i in i..10{
@@ -28,32 +29,33 @@ fn main() -> Result<()> {
  */
 
 
-    //let mut performance_values = Vec::new();
-  /*  for i in 1..3{
-        performance_values.push(i * 1_000_000);
+    let mut performance_values = Vec::new();
+    for i in 2..7{
+        performance_values.push(i32::pow(10, i));
     }
-    performance_values.clear();
+   // performance_values.clear();
 
 
-    performance_values.push(1_000_000);
-    */
+   // performance_values.push(1_000_000);
+
     let mut times = json::JsonValue::new_object();
 
-    let n_items = 3_000_000;
 
 
-    let orig: Vec<f32> = repeat_with(rand::random::<f32>).take(n_items).collect();
-
-
-    for n in buffer_values {
+    for n in performance_values {
         let mut fg = Flowgraph::new();
+
+        let n_items = n as usize;
+
+
+        let orig: Vec<f32> = repeat_with(rand::random::<f32>).take(n_items).collect();
 
         let start = instant::Instant::now();
 
         let wgpu_broker = pollster::block_on(WgpuBroker::new());
 
         let src = VectorSourceBuilder::<f32>::new(orig.clone()).build();
-        let wgpu = WgpuBuilderWasm::new(wgpu_broker, n as u64).build();
+        let wgpu = WgpuBuilderWasm::new(wgpu_broker, buffer_size as u64).build();
         let snk = VectorSinkBuilder::<f32>::new().build();
 
         let src = fg.add_block(src);

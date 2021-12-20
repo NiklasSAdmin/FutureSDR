@@ -16,15 +16,15 @@ use crate::runtime::StreamIoBuilder;
 use crate::runtime::WorkIo;
 use crate::runtime::buffer::wgpu::{ReaderH2D, WriterD2H, BufferEmpty, GPUBufferFull};
 
+const BUFF_AMOUNT: u32 = 1;
 
 pub struct WgpuWasm {
     broker: WgpuBroker,
     buffer_items: u64,
     pipeline: Option<ComputePipeline>,
     output_buffers: Vec<Buffer>,
-    //input_buffers: Vec<Buffer>,
     storage_buffer: wgpu::Buffer,
-    //processed_bytes: u64,
+
 }
 
 impl WgpuWasm {
@@ -51,9 +51,7 @@ impl WgpuWasm {
                 buffer_items,
                 pipeline: None,
                 output_buffers: Vec::new(),
-                //input_buffers: Vec::new(),
                 storage_buffer,
-                //processed_bytes: 0,
             },
         )
     }
@@ -78,21 +76,27 @@ impl AsyncKernel for WgpuWasm {
         _m: &mut MessageIo<Self>,
         _b: &mut BlockMeta,
     ) -> Result<()> {
-        let output_buffer = self.broker.device.create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size: self.buffer_items * 4,
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        self.output_buffers.push(output_buffer);
 
         let input = i(sio, 0);
+        for _ in 0..BUFF_AMOUNT
+        {
 
-        let input_buffer = BufferEmpty {
-            buffer: vec![0u8; (self.buffer_items * 4) as usize],
-            size: self.buffer_items * 4,
-        };
-        input.submit(input_buffer);
+            let output_buffer = self.broker.device.create_buffer(&wgpu::BufferDescriptor {
+                label: None,
+                size: self.buffer_items * 4,
+                usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            self.output_buffers.push(output_buffer);
+
+
+            let input_buffer = BufferEmpty {
+                buffer: vec![0u8; (self.buffer_items * 4) as usize],
+                size: self.buffer_items * 4,
+            };
+            input.submit(input_buffer);
+        }
+
 
         let cs_module = self.broker.device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: None,
@@ -123,20 +127,28 @@ impl AsyncKernel for WgpuWasm {
             self.output_buffers.push(m.buffer);
         }
 
+        if (self.output_buffers.is_empty()) {
+            return Ok(());
+        }
         for m in i(sio, 0).buffers().drain(..) {
+
+
+
             log::info!("**** Full Input Buffer is processed");
 
             if self.output_buffers.is_empty() {
-                log::info!("output buff empty ************************************");
-                let o = self.broker.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: None,
-                    size: self.buffer_items * 4,
-                    usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-                    mapped_at_creation: false,
-                });
-                self.output_buffers.push(o);
+                log::info!("No output buffer available");
+                return Ok(());
             }
+            /*
+            if i(sio, 0).buffers().len() < 1 {
+                return Ok(());
 
+            }
+            
+             */
+           // let m = i(sio, 0).buffers().pop().unwrap();
+            //i(sio,0).buffers().remove(pos);
 
 
             let output = self.output_buffers.pop().unwrap();
@@ -179,7 +191,7 @@ impl AsyncKernel for WgpuWasm {
             }
 
             // log::info!("*** remapping result buffer ***");
-            let buffer_slice = output.slice(..);
+            let buffer_slice = output.slice(0..m.used_bytes as u64);
             let buffer_future = buffer_slice.map_async(wgpu::MapMode::Read);
 
             self.broker.device.poll(wgpu::Maintain::Wait);

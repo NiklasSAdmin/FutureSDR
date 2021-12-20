@@ -186,9 +186,10 @@ impl BufferReaderHost for ReaderD2H {
             let capacity = buffer.buffer.used_bytes / self.item_size;
           //  let ret = buffer.buffer.buffer.as_ptr(); // get_mapped_range().as_ptr();
             //let ret = var.as_mut_ptr();
-            let range = buffer.buffer.buffer.slice(..).get_mapped_range();
+            let r = 0..buffer.buffer.used_bytes;
+            let range = buffer.buffer.buffer.slice(0..buffer.buffer.used_bytes as u64).get_mapped_range();
             let ptr = range.as_ptr(); // get_mapped_range().as_ptr();
-            //assert_eq!(range.len(), buffer.buffer.used_bytes);
+            assert_eq!(range.len(), buffer.buffer.used_bytes);
            // let ptr = range.as_ptr();
             //drop(var);
            // buffer.buffer.buffer.unmap();
@@ -202,37 +203,6 @@ impl BufferReaderHost for ReaderD2H {
             )
         }
     }
-/*
-    #[cfg(not(target_arch = "wasm32"))]
-    fn bytes(&mut self) -> (*const u8, usize) {
-        debug!("D2H reader bytes");
-        if self.buffer.is_none() {
-            if let Some(b) = self.inbound.lock().unwrap().pop() {
-                self.buffer = Some(CurrentBuffer {
-                    buffer: b,
-                    offset: 0,
-                });
-            } else {
-                return (std::ptr::null::<u8>(), 0);
-            }
-        }
-
-        unsafe {
-            let buffer = self.buffer.as_ref().unwrap();
-            let capacity = buffer.buffer.used_bytes / self.item_size;
-            let mut var = buffer.buffer.buffer.slice(..).get_mapped_range_mut(); // get_mapped_range().as_ptr();
-            let ret = var.as_mut_ptr();
-            //   let ret = buffer.buffer.buffer.slice(..).get_mapped_range().to_vec().as_ptr(); // get_mapped_range().as_ptr();
-            //    (capacity - buffer.offset) * self.item_size);
-
-            (
-                ret.add(buffer.offset * self.item_size),
-                (capacity - buffer.offset) * self.item_size,
-            )
-        }
-    }
-
- */
 
     fn consume(&mut self, amount: usize) {
        // log::info!("D2H reader consume {} elements", amount);
